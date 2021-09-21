@@ -6,10 +6,7 @@ package com.sales.market;
 
 import com.sales.market.model.*;
 import com.sales.market.repository.BuyRepository;
-import com.sales.market.service.CategoryService;
-import com.sales.market.service.ItemInstanceService;
-import com.sales.market.service.ItemService;
-import com.sales.market.service.SubCategoryService;
+import com.sales.market.service.*;
 import io.micrometer.core.instrument.util.IOUtils;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -19,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @Component
 public class DevelopmentBootstrap implements ApplicationListener<ContextRefreshedEvent> {
@@ -26,87 +24,56 @@ public class DevelopmentBootstrap implements ApplicationListener<ContextRefreshe
     private final CategoryService categoryService;
     private final SubCategoryService subCategoryService;
     private final ItemService itemService;
-    private final ItemInstanceService itemInstanceService;
+    private final ItemInventoryEntryService itemInventoryEntryService;
 
     SubCategory beverageSubCat = null;
 
-    // injeccion evita hacer instancia   = new Clase();
-    // bean pueden tener muchos campos y otros beans asociados
-
     public DevelopmentBootstrap(BuyRepository buyRepository, CategoryService categoryService,
-            SubCategoryService subCategoryService, ItemService itemService, ItemInstanceService itemInstanceService) {
+                                SubCategoryService subCategoryService, ItemService itemService, ItemInventoryEntryService itemInventoryEntryService) {
         this.buyRepository = buyRepository;
         this.categoryService = categoryService;
         this.subCategoryService = subCategoryService;
         this.itemService = itemService;
-        this.itemInstanceService = itemInstanceService;
+        this.itemInventoryEntryService = itemInventoryEntryService;
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
         System.out.println("evento de spring");
-        /*   duplicacion de codigo
-        Buy buy = new Buy();
-        buy.setValue(BigDecimal.TEN);
-        buyRespository.save(buy);
-        Buy buy2 = new Buy();
-        buy2.setValue(BigDecimal.ONE);
-        buyRespository.save(buy);*/
-
         persistBuy(BigDecimal.TEN);
         persistBuy(BigDecimal.ONE);
         persistCategoriesAndSubCategories();
-        Item maltinItem = persistItems(beverageSubCat);
+        Item maltinItem = persistItems(beverageSubCat, "MALTIN");
+        persistItems(beverageSubCat, "COCACOLA");
         persistItemInstances(maltinItem);
     }
 
     private void persistItemInstances(Item maltinItem) {
-        ItemInstance maltinItem1 = createItem(maltinItem, "SKU-77721106006158", 5D);
-        ItemInstance maltinItem2 = createItem(maltinItem, "SKU-77721106006159", 5D);
-        ItemInstance maltinItem3 = createItem(maltinItem, "SKU-77721106006160", 5D);
-        ItemInstance maltinItem4 = createItem(maltinItem, "SKU-77721106006161", 5D);
-        itemInstanceService.save(maltinItem1);
-        itemInstanceService.save(maltinItem2);
-        itemInstanceService.save(maltinItem3);
-        itemInstanceService.save(maltinItem4);
+        BigDecimal priceMaltin = new BigDecimal("5");
+        ItemInstance maltinItem1 = createItem(maltinItem, "SKU-77721106006158", priceMaltin);
+        ItemInstance maltinItem2 = createItem(maltinItem, "SKU-77721106006159", priceMaltin);
+        ItemInstance maltinItem3 = createItem(maltinItem, "SKU-77721106006160", priceMaltin);
+        ItemInstance maltinItem4 = createItem(maltinItem, "SKU-77721106006161", priceMaltin);
+        itemInventoryEntryService.registerOperationItemInventoryEntry(
+                Arrays.asList(maltinItem1, maltinItem2, maltinItem3, maltinItem4), MovementType.BUY);
     }
 
-    private ItemInstance createItem(Item maltinItem, String sku, double price) {
+    private ItemInstance createItem(Item maltinItem, String sku, BigDecimal price) {
         ItemInstance itemInstance = new ItemInstance();
         itemInstance.setItem(maltinItem);
         itemInstance.setFeatured(true);
-        itemInstance.setPrice(price);
+        itemInstance.setPriceBuy(price);
         itemInstance.setIdentifier(sku);
+        itemInstance.setItemInstanceStatus(ItemInstanceStatus.AVAILABLE);
         return itemInstance;
     }
 
-    private Item persistItems(SubCategory subCategory) {
+    private Item persistItems(SubCategory subCategory, String name) {
         Item item = new Item();
-        item.setCode("B-MALTIN");
-        item.setName("MALTIN");
+        item.setCode("B-"+name);
+        item.setName(name);
         item.setSubCategory(subCategory);
-        /*try {
-            item.setImage(ImageUtils.inputStreamToByteArray(getResourceAsStream("/images/maltin.jpg")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
         return itemService.save(item);
-    }
-
-    private String getResourceAsString(String resourceName) {
-        try (InputStream inputStream = this.getClass().getResourceAsStream(resourceName)) {
-            return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    private InputStream getResourceAsStream(String resourceName) {
-        try (InputStream inputStream = this.getClass().getResourceAsStream(resourceName)) {
-            return inputStream;
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
 
     private void persistCategoriesAndSubCategories() {

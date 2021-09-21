@@ -8,6 +8,7 @@ import com.sales.market.dto.ItemInstanceDto;
 
 import javax.persistence.Entity;
 import javax.persistence.OneToOne;
+import java.math.BigDecimal;
 
 @Entity
 public class ItemInstance extends ModelBase<ItemInstanceDto> {
@@ -17,11 +18,9 @@ public class ItemInstance extends ModelBase<ItemInstanceDto> {
 
     private Boolean featured = Boolean.FALSE;
 
-    // todo generalmente se usa BigDecimal
-    private Double price;
-    // todo estados AVAILABLE, SOLD, MAINTENANCE, ON_TRANSPORTATION
-    // private ItemInstanceState itemInstanceState;
-    // todo agregar totalCost
+    private BigDecimal priceBuy;
+
+    private BigDecimal priceSale;
 
     private ItemInstanceStatus itemInstanceStatus;
 
@@ -41,14 +40,6 @@ public class ItemInstance extends ModelBase<ItemInstanceDto> {
         this.identifier = identifier;
     }
 
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
     public Boolean getFeatured() {
         return featured;
     }
@@ -57,7 +48,30 @@ public class ItemInstance extends ModelBase<ItemInstanceDto> {
         this.featured = featured;
     }
 
-    /*@Override
+    public ItemInstanceStatus getItemInstanceStatus() {
+        return itemInstanceStatus;
+    }
+
+    public void setItemInstanceStatus(ItemInstanceStatus itemInstanceStatus) {
+        this.itemInstanceStatus = itemInstanceStatus;
+    }
+
+    public BigDecimal getPriceBuy() {
+        return priceBuy;
+    }
+
+    public void setPriceBuy(BigDecimal priceBuy) {
+        this.priceBuy = priceBuy;
+    }
+
+    public BigDecimal getPriceSale() {
+        return priceSale;
+    }
+
+    public void setPriceSale(BigDecimal priceSale) {
+        this.priceSale = priceSale;
+    }
+/*@Override
     public ModelBase toDomain(ItemInstanceDto element, ModelMapper mapper) {
         super.toDomain(element, mapper);
         setItem((Item) new Item().toDomain(element.getItemDto(), mapper));
